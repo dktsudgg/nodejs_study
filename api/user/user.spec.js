@@ -1,11 +1,27 @@
+// 테스트코드가 들어가는 파일
 
-const app = require('./index');
+
+const app = require('../../');
 // supertest 사용..
 // npm install supertest --save-dev
 const request = require('supertest');
 const should = require('should');
 
+const models = require('../../models');
+
+/**
+ * 특정 it() 함수만 동작시켜보기 위해서는 it.only()를 사용하면 된다.
+ * describe()에도 describe.only()를 걸면 해당 describe만 동작시켜볼 수 있다.
+ */
 describe('GET /users는', () => {
+    const users = [{name:'alice'}, {name:'bek'}, {name:'chris'}];
+
+    /**
+     * 여기 before들은 it들이 실행되기 전에 최초 한번 실행된다..
+     */
+    before(()=>models.sequelize.sync({force: true}));
+    before(()=>models.User.bulkCreate(users));
+
     describe('성공시', () => {
         it('유저 객체를 담은 배열로 응답한다', (done)=>{
             request(app)
@@ -36,7 +52,15 @@ describe('GET /users는', () => {
     });
 });
 
-describe('GET /users/1는', () => {
+describe('GET /users/:id는', () => {
+    const users = [{name:'alice'}, {name:'bek'}, {name:'chris'}];
+
+    /**
+     * 여기 before들은 it들이 실행되기 전에 최초 한번 실행된다..
+     */
+    before(()=>models.sequelize.sync({force: true}));
+    before(()=>models.User.bulkCreate(users));
+
     describe('성공 시,', () => {
         it('id가 1인 유저 객체를 반환한다.', (done) => {
             request(app)
@@ -64,6 +88,14 @@ describe('GET /users/1는', () => {
 });
 
 describe('DELETE /users/1는', () => {
+    const users = [{name:'alice'}, {name:'bek'}, {name:'chris'}];
+
+    /**
+     * 여기 before들은 it들이 실행되기 전에 최초 한번 실행된다..
+     */
+    before(()=>models.sequelize.sync({force: true}));
+    before(()=>models.User.bulkCreate(users));
+
     describe('성공 시', () => {
         it('204를 응답한다', (done) => {
             request(app)
@@ -83,6 +115,14 @@ describe('DELETE /users/1는', () => {
 })
 
 describe('POST /users는', () => {
+    const users = [{name:'alice'}, {name:'bek'}, {name:'chris'}];
+
+    /**
+     * 여기 before들은 it들이 실행되기 전에 최초 한번 실행된다..
+     */
+    before(()=>models.sequelize.sync({force: true}));
+    before(()=>models.User.bulkCreate(users));
+
     describe('성공 시', ()=>{
         let body;
         let name = 'daniel';
@@ -122,4 +162,59 @@ describe('POST /users는', () => {
         })
     })
     
+});
+
+describe('PUT /users/:id', () => {
+    const users = [{name:'alice'}, {name:'bek'}, {name:'chris'}];
+
+    /**
+     * 여기 before들은 it들이 실행되기 전에 최초 한번 실행된다..
+     */
+    before(()=>models.sequelize.sync({force: true}));
+    before(()=>models.User.bulkCreate(users));
+    
+    describe('성공시', () => {
+        it('변경된 name으로 응답한다.', (done) => {
+            const name= 'chally'
+            request(app)
+                .put('/users/3')
+                .send({name})
+                .end((err, res) =>{
+                    res.body.should.have.property('name', name);
+                    done();
+                })
+        })
+    })
+
+    describe('실패시', ()=>{
+        it('정수가 아닌 id에서 400응답한다', done =>{
+            request(app)
+                .put('/users/one')
+                .expect(400)
+                .end(done);
+        });
+
+        it('name이 없을 경우 400응답한다', done =>{
+            request(app)
+                .put('/users/1')
+                .expect(400)
+                .end(done);
+        });
+
+        it('없는 유저일 경우 404응답한다', done =>{
+            request(app)
+                .put('/users/999')
+                .send({name: 'foo'})
+                .expect(404)
+                .end(done);
+        });
+
+        it('이름이 중복일 경우 409응답한다', done =>{
+            request(app)
+                .put('/users/3')
+                .send({name: 'bek'})
+                .expect(409)
+                .end(done);
+        });
+    });
 })

@@ -12,3 +12,4 @@
 # TDD
 * mocha로 테스트 실행 시, node_modules/.bin/mocha ~~~.spec.js
 * 근데 이렇게 길게 스크립트 입력하지 말고 package.json에 작성하여 사용..
+* -w 옵션을 주면 코드 수정 시 자동으로 테스트를 다시 실행해준다.
